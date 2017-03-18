@@ -23,19 +23,23 @@ function httpcontroller.postData(temperature)
 end
 
 function postToServer(temperature, serverConfig)
-local readingData = "value=" .. temperature .. "&" .. serverConfig.HTTP_SERVER_API_KEY
+  local readingData = "value=" .. temperature .. "&" .. serverConfig.HTTP_SERVER_API_KEY
   local conn = getConnection()
 
-  conn:connect(serverConfig.HTTP_SERVER_PORT, serverConfig.HTTP_SERVER_IP)
-  conn:send("POST " .. serverConfig.HTTP_SERVER_RESOURCE .. " HTTP/1.1\r\n") 
-  conn:send("Host: " .. serverConfig.HTTP_SERVER_HOST .. "\r\n") 
-  conn:send("Accept: */*\r\n") 
-  conn:send("Connection: close\r\n")
-  conn:send("Content-Length: " .. string.len(readingData) .. "\r\n")
-  conn:send("Content-Type: application/x-www-form-urlencoded\r\n")
-  conn:send("User-Agent: ESP8266 (compatible; esp8266 Lua;)\r\n")
-  conn:send("\r\n")
-  conn:send(readingData)
+  conn:dns(serverConfig.HTTP_SERVER_HOST, function(cnn, ipAddress)
+      if ipAddress ~= nil then
+        cnn:connect(serverConfig.HTTP_SERVER_PORT, ipAddress)
+        cnn:send("POST " .. serverConfig.HTTP_SERVER_RESOURCE .. " HTTP/1.1\r\n")
+        cnn:send("Host: " .. serverConfig.HTTP_SERVER_HOST .. "\r\n")
+        cnn:send("Accept: */*\r\n")
+        cnn:send("Connection: close\r\n")
+        cnn:send("Content-Length: " .. string.len(readingData) .. "\r\n")
+        cnn:send("Content-Type: application/x-www-form-urlencoded\r\n")
+        cnn:send("User-Agent: ESP8266 (compatible; esp8266 Lua;)\r\n")
+        cnn:send("\r\n")
+        cnn:send(readingData)
+      end
+    end)
 end
 
 return httpcontroller

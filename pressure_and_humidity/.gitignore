@@ -1,0 +1,5 @@
+*.tmp
+*.idea
+
+# Do not allow saving passwords into version control
+secrets.h

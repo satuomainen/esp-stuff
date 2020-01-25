@@ -1,5 +1,7 @@
 ### Barometric pressure and humidity
 
+![Finished product](./finished_device.png)
+
 ## Background
 
 Barometric pressure and humidity meter was the first connected device that I build many years ago. It was based on the original Raspberry Pi and it worked quite well. We had plenty of power cuts during the winters so being a Linux based setup the SD card was regularly corrupted. At least once a year I had to replace the SD card in the RasPi and install the operating system again. I [automated the process with Ansible](https://github.com/satuomainen/vadelma) after one or two manual iterations but it was still not very nice.

@@ -6,8 +6,6 @@
 
 #include "./secrets.h"
 
-#define USE_SERIAL Serial
-
 // We have a DHT22 connected to Wemos D1 pin D6
 #define DHTPIN D6
 #define DHTTYPE DHT22   // DHT 22 (AM2302)
@@ -22,15 +20,28 @@ char url[256];
 // Buffer for data that is sent to the server
 char postData[256];
 
-const long READING_INTERVAL_SECONDS = 300 * 1000;
+// Number of retries reading the DHT22 humidity sensor before giving up
+int MAX_DHT_RETRIES = 10;
+
+// The operation indicator LED is controlled by pin D5
+#define LED_PIN D5
+
+// Measurement cycle length is 5 minutes (300 sec).
+// LED blinks for 5 seconds, restart with Wifi connect is about 2-3 seconds
+// => Delay before restart = 300 - 5 - 3 = 292
+const long READING_INTERVAL_SECONDS = 292 * 1000;
+
+/* === INITIALIZATION === */
 
 void setup() {
-  USE_SERIAL.begin(115200);
-  USE_SERIAL.print("\n\n\n");
+  Serial.begin(115200);
+  Serial.print("\n\n\n");
 
   setupWifi();
   setupBmp180();
   setupDht22();
+
+  setupLed();
 }
 
 void setupWifi() {
@@ -38,14 +49,14 @@ void setupWifi() {
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    USE_SERIAL.print(".");
+    Serial.print(".");
   }
-  USE_SERIAL.printf("\nConnected to %s\n", STASSID);
+  Serial.printf("\nConnected to %s\n", STASSID);
 }
 
 void setupBmp180() {
   if (!bmp.begin()) {
-    USE_SERIAL.println("Could not find BMP180 sensor at 0x77");
+    Serial.println("Could not find BMP180 sensor at 0x77");
   }
 }
 
@@ -53,6 +64,13 @@ void setupDht22() {
   pinMode(DHTPIN, INPUT);
   dht.begin();  
 }
+
+void setupLed() {
+  pinMode(LED_PIN, OUTPUT);
+  ledOn();
+}
+
+/* === OPERATION === */
 
 void loop() {
   
@@ -62,10 +80,29 @@ void loop() {
     printDht();
   }
 
+  ledOff();
   delay(READING_INTERVAL_SECONDS);
+  blinkLed(5);
+  ESP.restart();
 }
 
-int MAX_DHT_RETRIES = 10;
+void ledOn() {
+  digitalWrite(LED_PIN, LOW);
+}
+
+void ledOff() {
+  digitalWrite(LED_PIN, HIGH);
+}
+
+void blinkLed(int times) {
+  ledOn();
+  for (int i = 0; i < times; i++) {
+    ledOff();
+    delay(500);
+    ledOn();
+    delay(500);
+  }
+}
 
 void printDht() {
   int retry = 0;
@@ -76,7 +113,7 @@ void printDht() {
 
     // Check if any reads failed and exit early (to try again).
     if (isnan(humidity) || isnan(temperature)) {
-      USE_SERIAL.println("Failed to read from DHT sensor!");
+      Serial.println("Failed to read from DHT sensor!");
       retry++;
       delay(100);
       continue;
@@ -121,9 +158,9 @@ void postReading(char* url, char* data) {
   int httpCode = http.POST(data);
 
   if (httpCode > 0) {
-    USE_SERIAL.printf("Posted to %s, DATA: %s\n", url, data);
+    Serial.printf("Posted to %s, DATA: %s\n", url, data);
   } else {
-    USE_SERIAL.printf("Posting readings failed, error: %s\n", http.errorToString(httpCode).c_str());
+    Serial.printf("Posting readings failed, error: %s\n", http.errorToString(httpCode).c_str());
   }
 
   http.end();

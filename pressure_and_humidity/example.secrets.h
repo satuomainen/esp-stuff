@@ -5,7 +5,7 @@
 const char STASSID[] = "YOUR_AP_NAME";
 const char STAPSK[]  = "YOUR_PASSWORD";
 
-// Server configuration - edit these to 
+// Server configuration - edit these to match your backend setup
 const int BMP180_PRESSURE_DATASERIES = 2;
 const int BMP180_TEMPERATURE_DATASERIES = 1;
 const int DHT22_HUMIDITY_DATASERIES = 4;
